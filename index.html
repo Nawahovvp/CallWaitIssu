@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>รายงานการเรียก</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+    }
+    #searchContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .filter-row {
+      display: flex;
+      align-items: center;
+    }
+    .search-row {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #teamFilterLabel {
+      font-size: 16px;
+      color: #333;
+    }
+    #teamFilter {
+      margin-left: 5px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      background-color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #teamFilter:hover {
+      border-color: #2980b9;
+    }
+    #searchInput {
+      width: 300px;
+      padding: 10px;
+      border-radius: 8px 0 0 8px;
+      border: 1px solid #ccc;
+      border-right: none;
+      font-size: 16px;
+    }
+    #searchButton {
+      padding: 10px;
+      background-color: #3498db;
+      color: white;
+      border: 1px solid #ccc;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #searchButton:hover {
+      background-color: #2980b9;
+    }
+    .table-container {
+      overflow-x: auto;
+      width: 100%;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      min-width: 900px;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid #ccc;
+      white-space: nowrap;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    th.sortable {
+      cursor: pointer;
+    }
+    th.sortable:hover {
+      background-color: #0056b3;
+    }
+    .arrow {
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .detail-button {
+      padding: 6px 10px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .detail-button:hover {
+      background-color: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 500px;
+      animation: zoomIn 0.4s ease;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close:hover {
+      color: #000;
+    }
+    #modalContent span.label {
+      color: #007bff;
+      font-weight: bold;
+    }
+    #modalContent span.value {
+      color: #000;
+    }
+    .pagination {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .pagination button,
+    .pagination select {
+      padding: 8px 12px;
+      background-color: #3498db;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0 5px;
+      transition: all 0.3s ease;
+    }
+    .pagination button:hover,
+    .pagination select:hover {
+      background-color: #2980b9;
+    }
+    .pagination .page-number {
+      width: 36px;
+      height: 36px;
+      background-color: #3498db;
+      color: white;
+      border-radius: 50%;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 5px;
+      cursor: pointer;
+      font-size: 16px;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    .pagination .page-number:hover {
+      background-color: #2980b9;
+      transform: scale(1.1);
+    }
+    .pagination .page-number.active {
+      background-color: #e67e22;
+      color: white;
+    }
+    .items-per-page {
+      margin-left: 10px;
+      font-size: 16px;
+    }
+    tr {
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.5s ease forwards;
+    }
+    tr:nth-child(even) {
+      animation-delay: 0.1s;
+    }
+    tr:nth-child(odd) {
+      animation-delay: 0.2s;
+    }
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes zoomIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    th:nth-child(3), td:nth-child(3) {
+      width: auto;
+      min-width: 80px;
+      max-width: 150px;
+      white-space: normal;
+    }
+    th:nth-child(5), td:nth-child(5) {
+      width: 150px;
+      min-width: 120px;
+    }
+    td:nth-child(7), th:nth-child(7) {
+      min-width: 200px;
+    }
+    @media (max-width: 768px) {
+      th:nth-child(3), td:nth-child(3) {
+        min-width: 60px;
+        font-size: 14px;
+      }
+    }
+    .highlight-red {
+      color: red;
+      font-weight: bold;
+    }
+    .yellow-light {
+      background-color: #c9ffc4; /* สีเหลืองอ่อน */
+    }
+    .pink-pastel {
+      background-color: #fce4ec; /* สีชมพูพาสเทล */
+    }
+    .text-left {
+      text-align: left;
+    }
+    .text-center {
+      text-align: center;
+    }
+    .call-count-box {
+      margin-left: 20px;
+      padding: 10px 16px;
+      background-color: #e6f2ff;
+      color: #007bff;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: background-color 0.3s ease;
+    }
+    .call-count-box span {
+      color: #d63384;
+      margin: 0 4px;
+      font-size: 18px;
+    }
+    .modern-label {
+      display: inline-block;
+      padding: 10px 16px;
+      background-color: #ffffff;
+      color: #007bff;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      border: 1px solid #d0eaff;
+      transition: all 0.3s ease;
+      margin-right: 8px;
+    }
+    .modern-label:hover {
+      background-color: #e6f2ff;
+      color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div id="searchContainer">
+    <div class="filter-row">
+      <label id="teamFilterLabel" for="teamFilter" class="modern-label">เลือกทีม</label>
+      <select id="teamFilter">
+        <option value="">ทั้งหมด</option>
+      </select>
+      <div id="callCountInfo" class="call-count-box">
+        จำนวน Ticket ค้าง <span id="callCountValue">0</span> Call
+      </div>
+    </div>
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="ค้นหา Ticket, Team, สาขา, ค้างหน่วยงาน, Material, Description..." />
+      <button id="searchButton"><i class="fas fa-search"></i></button>
+    </div>
+  </div>
+  <div class="table-container">
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-column="DateTime">วันที่แจ้ง <span class="arrow"></span></th>
+          <th class="sortable" data-column="Ticket Number">Ticket <span class="arrow"></span></th>
+          <th class="sortable" data-column="Team">Team <span class="arrow"></span></th>
+          <th class="sortable" data-column="Brand">สาขา <span class="arrow"></span></th>
+          <th class="sortable" data-column="ค้างหน่วยงาน">ค้างหน่วยงาน <span class="arrow"></span></th>
+          <th class="sortable" data-column="Material">Material <span class="arrow"></span></th>
+          <th class="sortable" data-column="Description">Description <span class="arrow"></span></th>
+          <th class="sortable" data-column="Vipa">คงเหลือ <span class="arrow"></span></th>
+          <th class="sortable" data-column="DayRepair">ค้าง(วัน) <span class="arrow"></span></th>
+          <th>ดูรายละเอียด</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="detailModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">×</span>
+      <h2>รายละเอียด</h2>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div class="pagination">
+    <button id="firstPage"><i class="fas fa-chevron-left"></i><i class="fas fa-chevron-left"></i></button>
+    <button id="prevPage"><i class="fas fa-chevron-left"></i></button>
+    <div id="pageNumbers"></div>
+    <button id="nextPage"><i class="fas fa-chevron-right"></i></button>
+    <button id="lastPage"><i class="fas fa-chevron-right"></i><i class="fas fa-chevron-right"></i></button>
+    <div class="items-per-page">
+      <label for="itemsPerPage">รายการต่อหน้า:</label>
+      <select id="itemsPerPage">
+        <option value="10">10 รายการ</option>
+        <option value="20" selected>20 รายการ</option>
+        <option value="30">30 รายการ</option>
+      </select>
+    </div>
+  </div>
+
+  <script>
+    const sheetID = '1dzE4Xjc7H0OtNUmne62u0jFQT-CiGsG2eBo-1v6mrZk';
+    const sheetName = 'Call_Report';
+    const url = `https://opensheet.elk.sh/${sheetID}/${sheetName}`;
+
+    const modal = document.getElementById("detailModal");
+    const modalContent = document.getElementById("modalContent");
+    const closeModal = document.getElementById("closeModal");
+    const teamFilter = document.getElementById("teamFilter");
+    const searchInput = document.getElementById("searchInput");
+    const searchButton = document.getElementById("searchButton");
+    const tableBody = document.querySelector("#data-table tbody");
+    const pageNumbersContainer = document.getElementById("pageNumbers");
+    const firstPageButton = document.getElementById("firstPage");
+    const prevPageButton = document.getElementById("prevPage");
+    const nextPageButton = document.getElementById("nextPage");
+    const lastPageButton = document.getElementById("lastPage");
+    const itemsPerPageSelect = document.getElementById("itemsPerPage");
+
+    let allData = [];
+    let currentPage = 1;
+    let itemsPerPage = 20;
+    let sortConfig = { column: null, direction: 'asc' };
+
+    closeModal.onclick = () => modal.style.display = "none";
+    window.onclick = event => {
+      if (event.target == modal) modal.style.display = "none";
+    };
+
+    itemsPerPageSelect.addEventListener("change", (e) => {
+      itemsPerPage = parseInt(e.target.value);
+      currentPage = 1;
+      filterAndRenderTable();
+    });
+
+    searchInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        filterAndRenderTable();
+      }
+    });
+
+    searchButton.addEventListener("click", () => {
+      filterAndRenderTable();
+    });
+
+    function populateTeamFilter(data) {
+      const teams = [...new Set(data.map(row => row["Team"]).filter(team => team))].sort();
+      teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+      teams.forEach(team => {
+        const option = document.createElement("option");
+        option.value = team;
+        option.textContent = team;
+        teamFilter.appendChild(option);
+      });
+    }
+
+    function addSortListeners() {
+      const sortableHeaders = document.querySelectorAll("th.sortable");
+      sortableHeaders.forEach(header => {
+        header.addEventListener("click", () => {
+          const column = header.getAttribute("data-column");
+          if (sortConfig.column === column) {
+            sortConfig.direction = sortConfig.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            sortConfig.column = column;
+            sortConfig.direction = 'asc';
+          }
+          updateSortArrows();
+          filterAndRenderTable();
+        });
+      });
+    }
+
+    function updateSortArrows() {
+      const sortableHeaders = document.querySelectorAll("th.sortable");
+      sortableHeaders.forEach(header => {
+        const arrow = header.querySelector(".arrow");
+        const column = header.getAttribute("data-column");
+        if (column === sortConfig.column) {
+          arrow.textContent = sortConfig.direction === 'asc' ? '↑' : '↓';
+        } else {
+          arrow.textContent = '';
+        }
+      });
+    }
+
+   function filterAndRenderTable() {
+  const selectedTeam = teamFilter.value;
+  const keyword = searchInput.value.toLowerCase().trim();
+  let filteredData = allData.filter(row => 
+    Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
+    (!selectedTeam || row["Team"] === selectedTeam) && // กรองตาม Team
+    (!(row["ค้างหน่วยงาน"] || "").toLowerCase().includes("ลูกค้า")) && // กรองแถวที่ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
+    (!keyword || // กรองตามคำค้น
+      (row["DateTime"] || "").toLowerCase().includes(keyword) ||
+      (row["Ticket Number"] || "").toLowerCase().includes(keyword) ||
+      (row["Team"] || "").toLowerCase().includes(keyword) ||
+      (row["Brand"] || "").toLowerCase().includes(keyword) ||
+      (row["ค้างหน่วยงาน"] || "").toLowerCase().includes(keyword) ||
+      (row["Material"] || "").toLowerCase().includes(keyword) ||
+      (row["Description"] || "").toLowerCase().includes(keyword) ||
+      (row["Vipa"] || "").toLowerCase().includes(keyword) ||
+      (row["DayRepair"] || "").toLowerCase().includes(keyword)
+    )
+  );
+
+     if (sortConfig.column) {
+    filteredData.sort((a, b) => {
+      let valueA = a[sortConfig.column] || "";
+      let valueB = b[sortConfig.column] || "";
+
+      // สำหรับ DayRepair และ Vipa ให้แปลงเป็น Number
+      if (sortConfig.column === 'DayRepair' || sortConfig.column === 'Vipa') {
+        valueA = Number(valueA) || 0;
+        valueB = Number(valueB) || 0;
+        
+        if (sortConfig.direction === 'asc') {
+          return valueA - valueB;
+        } else {
+          return valueB - valueA;
+        }
+      } else {
+        // สำหรับข้อมูลอื่นๆ ให้เรียงแบบ string
+        valueA = valueA.toString().toLowerCase();
+        valueB = valueB.toString().toLowerCase();
+        
+        if (sortConfig.direction === 'asc') {
+          return valueA.localeCompare(valueB);
+        } else {
+          return valueB.localeCompare(valueB);
+        }
+      }
+    });
+  }
+
+  currentPage = 1;
+  renderTable(filteredData);
+  updateCallCount(filteredData);
+}
+
+    teamFilter.addEventListener("change", filterAndRenderTable);
+
+    function updateCallCount(data) {
+      const uniqueTickets = [...new Set(data.map(row => row["Ticket Number"]))];
+      const count = uniqueTickets.length;
+      const callCountValue = document.getElementById("callCountValue");
+      callCountValue.textContent = count;
+    }
+
+    function formatDateTime(dateTime) {
+      if (!dateTime) return "";
+      const datePart = dateTime.split(" ")[0];
+      return datePart;
+    }
+
+    function renderTable(data) {
+      tableBody.innerHTML = '';
+      const startIdx = (currentPage - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+      const paginatedData = data.slice(startIdx, endIdx);
+
+      // สร้างอ็อบเจ็กต์เพื่อเก็บกลุ่ม Ticket Number
+      const ticketGroups = {};
+      data.forEach(row => {
+        const ticket = row["Ticket Number"];
+        if (!ticketGroups[ticket]) {
+          ticketGroups[ticket] = [];
+        }
+        ticketGroups[ticket].push(row);
+      });
+
+      // สร้างรายการ Ticket Number ที่ไม่ซ้ำกันและเรียงลำดับ
+      const uniqueTickets = Object.keys(ticketGroups).sort();
+
+      // กำหนดสีให้แต่ละกลุ่ม
+      const colorMap = {};
+      uniqueTickets.forEach((ticket, index) => {
+        if (ticket === "24103102058") {
+          colorMap[ticket] = "yellow-light";
+        } else if (ticket === "25011101274") {
+          colorMap[ticket] = "pink-pastel";
+        } else {
+          colorMap[ticket] = index % 2 === 0 ? "yellow-light" : "pink-pastel";
+        }
+      });
+
+      paginatedData.forEach((row, i) => {
+        const tr = document.createElement("tr");
+        tr.style.animationDelay = `${i * 0.05}s`;
+        const ticket = row["Ticket Number"];
+        tr.className = colorMap[ticket];
+
+        const columns = ["DateTime", "Ticket Number", "Team", "Brand", "ค้างหน่วยงาน", "Material", "Description", "Vipa","DayRepair"];
+        columns.forEach(col => {
+          const td = document.createElement("td");
+          let cellValue = row[col] || "";
+          
+          if (col === "DateTime") {
+            cellValue = formatDateTime(cellValue);
+          } else if (col === "DayRepair" || col === "Vipa") {
+            // แปลงเป็น Number และแสดงผล
+            const numValue = Number(cellValue);
+            cellValue = isNaN(numValue) ? "" : numValue.toString();
+          }
+          
+          td.textContent = cellValue;
+          
+          // เพิ่ม class สำหรับจัดตำแหน่ง
+          if (col === "Description") {
+            td.classList.add("text-left");
+          } else if (col === "Vipa" || col === "DayRepair") {
+            td.classList.add("text-center");
+          }
+          
+          if ((col === "Material" || col === "Description") && row["Description"] === "Code ผิด") {
+            td.className = "highlight-red";
+          }
+          
+          tr.appendChild(td);
+        });
+
+        const detailTd = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.textContent = "ดูรายละเอียด";
+        btn.className = "detail-button";
+        btn.onclick = () => {
+          modalContent.innerHTML = columns.map(col => {
+            let value = row[col] || "";
+            if (col === "DateTime") {
+              value = formatDateTime(value);
+            } else if (col === "DayRepair" || col === "Vipa") {
+              const numValue = Number(value);
+              value = isNaN(numValue) ? "" : numValue.toString();
+            }
+            let valueClass = (col === "Material" || col === "Description") && row["Description"] === "Code ผิด" ? "highlight-red" : "value";
+            return `<div><span class='label'>${col}:</span> <span class='${valueClass}'>${value}</span></div>`;
+          }).join('');
+          modal.style.display = "block";
+        };
+        detailTd.appendChild(btn);
+        tr.appendChild(detailTd);
+
+        tableBody.appendChild(tr);
+      });
+      updatePagination(data);
+    }
+
+    function updatePagination(data) {
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+      pageNumbersContainer.innerHTML = '';
+
+      const startPage = Math.max(1, currentPage - 1);
+      const endPage = Math.min(totalPages, currentPage + 2);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageNumberButton = document.createElement("button");
+        pageNumberButton.className = `page-number ${i === currentPage ? 'active' : ''}`;
+        pageNumberButton.textContent = i;
+        pageNumberButton.onclick = () => {
+          currentPage = i;
+          filterAndRenderTable();
+        };
+        pageNumbersContainer.appendChild(pageNumberButton);
+      }
+
+      firstPageButton.disabled = currentPage === 1;
+      prevPageButton.disabled = currentPage === 1;
+      nextPageButton.disabled = currentPage === totalPages;
+      lastPageButton.disabled = currentPage === totalPages;
+    }
+
+    firstPageButton.onclick = () => {
+      currentPage = 1;
+      filterAndRenderTable();
+    };
+
+    prevPageButton.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        filterAndRenderTable();
+      }
+    };
+
+    nextPageButton.onclick = () => {
+      const totalPages = Math.ceil(allData.filter(row => Number(row["Vipa"] || 0) > 0).length / itemsPerPage);
+      if (currentPage < totalPages) {
+        currentPage++;
+        filterAndRenderTable();
+      }
+    };
+
+    lastPageButton.onclick = () => {
+      currentPage = Math.ceil(allData.filter(row => Number(row["Vipa"] || 0) > 0).length / itemsPerPage);
+      filterAndRenderTable();
+    };
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        allData = data;
+        populateTeamFilter(allData);
+        addSortListeners();
+        filterAndRenderTable();
+      })
+      .catch(error => {
+        console.error("ไม่สามารถโหลดข้อมูลได้:", error);
+        tableBody.innerHTML = '<tr><td colspan="9">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+      });
+  </script>
+</body>
+</html>
