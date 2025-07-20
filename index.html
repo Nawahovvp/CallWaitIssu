@@ -406,16 +406,27 @@
       filterAndRenderTable();
     });
 
-    function populateTeamFilter(data) {
-      const teams = [...new Set(data.map(row => row["Team"]).filter(team => team))].sort();
-      teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
-      teams.forEach(team => {
-        const option = document.createElement("option");
-        option.value = team;
-        option.textContent = team;
-        teamFilter.appendChild(option);
-      });
-    }
+   function populateTeamFilter(data) {
+  // กรองข้อมูลตามเงื่อนไขเดียวกับ filterAndRenderTable
+  const filteredData = data.filter(row => 
+    Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
+    !(row["ค้างหน่วยงาน"] || "").toLowerCase().includes("ลูกค้า") // กรองแถวที่ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
+  );
+
+  // สร้างรายการทีมที่ไม่ซ้ำกันจากข้อมูลที่กรองแล้ว
+  const teams = [...new Set(filteredData.map(row => row["Team"]).filter(team => team))].sort();
+  
+  // ล้างตัวเลือกใน teamFilter
+  teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+  
+  // เพิ่มตัวเลือกทีมลงใน select
+  teams.forEach(team => {
+    const option = document.createElement("option");
+    option.value = team;
+    option.textContent = team;
+    teamFilter.appendChild(option);
+  });
+}
 
     function addSortListeners() {
       const sortableHeaders = document.querySelectorAll("th.sortable");
