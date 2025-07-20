@@ -407,25 +407,38 @@
     });
 
    function populateTeamFilter(data) {
-  // กรองข้อมูลตามเงื่อนไขเดียวกับ filterAndRenderTable
-  const filteredData = data.filter(row => 
-    Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
-    !(row["ค้างหน่วยงาน"] || "").toLowerCase().includes("ลูกค้า") // กรองแถวที่ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
-  );
+  // กรองข้อมูลตามเงื่อนไข: Vipa > 0 และ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
+  const filteredData = data.filter(row => {
+    const vipa = Number(row["Vipa"] || 0); // แปลง Vipa เป็นตัวเลข, ถ้าไม่มีให้เป็น 0
+    const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase(); // ดึงค้างหน่วยงาน, ถ้าไม่มีให้เป็น ""
+    return vipa > 0 && !pendingDept.includes("ลูกค้า");
+  });
 
   // สร้างรายการทีมที่ไม่ซ้ำกันจากข้อมูลที่กรองแล้ว
-  const teams = [...new Set(filteredData.map(row => row["Team"]).filter(team => team))].sort();
-  
+  const teams = [...new Set(filteredData.map(row => row["Team"]).filter(team => team && team.trim() !== ""))].sort();
+
   // ล้างตัวเลือกใน teamFilter
   teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
-  
-  // เพิ่มตัวเลือกทีมลงใน select
-  teams.forEach(team => {
+
+  // ตรวจสอบว่ามีทีมหรือไม่
+  if (teams.length === 0) {
     const option = document.createElement("option");
-    option.value = team;
-    option.textContent = team;
+    option.value = "";
+    option.textContent = "ไม่มีทีมที่ตรงตามเงื่อนไข";
+    option.disabled = true;
     teamFilter.appendChild(option);
-  });
+  } else {
+    // เพิ่มตัวเลือกทีมลงใน select
+    teams.forEach(team => {
+      const option = document.createElement("option");
+      option.value = team;
+      option.textContent = team;
+      teamFilter.appendChild(option);
+    });
+  }
+
+  // อัปเดตจำนวนทีมใน console เพื่อดีบั๊ก
+  console.log("ทีมที่พบหลังการกรอง:", teams);
 }
 
     function addSortListeners() {
