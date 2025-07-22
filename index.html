@@ -269,6 +269,7 @@
       padding: 10px 16px;
       background-color: #e6f2ff;
       color: #007bff;
+      border: 1px solid #d0eaff;
       border-radius: 10px;
       font-size: 16px;
       font-weight: bold;
@@ -406,40 +407,39 @@
       filterAndRenderTable();
     });
 
-   function populateTeamFilter(data) {
-  // กรองข้อมูลตามเงื่อนไข: Vipa > 0 และ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
-  const filteredData = data.filter(row => {
-    const vipa = Number(row["Vipa"] || 0); // แปลง Vipa เป็นตัวเลข, ถ้าไม่มีให้เป็น 0
-    const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase(); // ดึงค้างหน่วยงาน, ถ้าไม่มีให้เป็น ""
-    return vipa > 0 && !pendingDept.includes("ลูกค้า");
-  });
+    function populateTeamFilter(data) {
+      // กรองข้อมูลตามเงื่อนไข: Vipa > 0
+      const filteredData = data.filter(row => {
+        const vipa = Number(row["Vipa"] || 0); // แปลง Vipa เป็นตัวเลข, ถ้าไม่มีให้เป็น 0
+        return vipa > 0;
+      });
 
-  // สร้างรายการทีมที่ไม่ซ้ำกันจากข้อมูลที่กรองแล้ว
-  const teams = [...new Set(filteredData.map(row => row["Team"]).filter(team => team && team.trim() !== ""))].sort();
+      // สร้างรายการทีมที่ไม่ซ้ำกันจากข้อมูลที่กรองแล้ว
+      const teams = [...new Set(filteredData.map(row => row["Team"]).filter(team => team && team.trim() !== ""))].sort();
 
-  // ล้างตัวเลือกใน teamFilter
-  teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
+      // ล้างตัวเลือกใน teamFilter
+      teamFilter.innerHTML = '<option value="">ทั้งหมด</option>';
 
-  // ตรวจสอบว่ามีทีมหรือไม่
-  if (teams.length === 0) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "ไม่มีทีมที่ตรงตามเงื่อนไข";
-    option.disabled = true;
-    teamFilter.appendChild(option);
-  } else {
-    // เพิ่มตัวเลือกทีมลงใน select
-    teams.forEach(team => {
-      const option = document.createElement("option");
-      option.value = team;
-      option.textContent = team;
-      teamFilter.appendChild(option);
-    });
-  }
+      // ตรวจสอบว่ามีทีมหรือไม่
+      if (teams.length === 0) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "ไม่มีทีมที่ตรงตามเงื่อนไข";
+        option.disabled = true;
+        teamFilter.appendChild(option);
+      } else {
+        // เพิ่มตัวเลือกทีมลงใน select
+        teams.forEach(team => {
+          const option = document.createElement("option");
+          option.value = team;
+          option.textContent = team;
+          teamFilter.appendChild(option);
+        });
+      }
 
-  // อัปเดตจำนวนทีมใน console เพื่อดีบั๊ก
-  console.log("ทีมที่พบหลังการกรอง:", teams);
-}
+      // อัปเดตจำนวนทีมใน console เพื่อดีบั๊ก
+      console.log("ทีมที่พบหลังการกรอง:", teams);
+    }
 
     function addSortListeners() {
       const sortableHeaders = document.querySelectorAll("th.sortable");
@@ -471,59 +471,58 @@
       });
     }
 
-   function filterAndRenderTable() {
-  const selectedTeam = teamFilter.value;
-  const keyword = searchInput.value.toLowerCase().trim();
-  let filteredData = allData.filter(row => 
-    Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
-    (!selectedTeam || row["Team"] === selectedTeam) && // กรองตาม Team
-    (!(row["ค้างหน่วยงาน"] || "").toLowerCase().includes("ลูกค้า")) && // กรองแถวที่ "ค้างหน่วยงาน" ไม่มีคำว่า "ลูกค้า"
-    (!keyword || // กรองตามคำค้น
-      (row["DateTime"] || "").toLowerCase().includes(keyword) ||
-      (row["Ticket Number"] || "").toLowerCase().includes(keyword) ||
-      (row["Team"] || "").toLowerCase().includes(keyword) ||
-      (row["Brand"] || "").toLowerCase().includes(keyword) ||
-      (row["ค้างหน่วยงาน"] || "").toLowerCase().includes(keyword) ||
-      (row["Material"] || "").toLowerCase().includes(keyword) ||
-      (row["Description"] || "").toLowerCase().includes(keyword) ||
-      (row["Vipa"] || "").toLowerCase().includes(keyword) ||
-      (row["DayRepair"] || "").toLowerCase().includes(keyword)
-    )
-  );
+    function filterAndRenderTable() {
+      const selectedTeam = teamFilter.value;
+      const keyword = searchInput.value.toLowerCase().trim();
+      let filteredData = allData.filter(row => 
+        Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
+        (!selectedTeam || row["Team"] === selectedTeam) && // กรองตาม Team
+        (!keyword || // กรองตามคำค้น
+          (row["DateTime"] || "").toLowerCase().includes(keyword) ||
+          (row["Ticket Number"] || "").toLowerCase().includes(keyword) ||
+          (row["Team"] || "").toLowerCase().includes(keyword) ||
+          (row["Brand"] || "").toLowerCase().includes(keyword) ||
+          (row["ค้างหน่วยงาน"] || "").toLowerCase().includes(keyword) ||
+          (row["Material"] || "").toLowerCase().includes(keyword) ||
+          (row["Description"] || "").toLowerCase().includes(keyword) ||
+          (row["Vipa"] || "").toLowerCase().includes(keyword) ||
+          (row["DayRepair"] || "").toLowerCase().includes(keyword)
+        )
+      );
 
-     if (sortConfig.column) {
-    filteredData.sort((a, b) => {
-      let valueA = a[sortConfig.column] || "";
-      let valueB = b[sortConfig.column] || "";
+      if (sortConfig.column) {
+        filteredData.sort((a, b) => {
+          let valueA = a[sortConfig.column] || "";
+          let valueB = b[sortConfig.column] || "";
 
-      // สำหรับ DayRepair และ Vipa ให้แปลงเป็น Number
-      if (sortConfig.column === 'DayRepair' || sortConfig.column === 'Vipa') {
-        valueA = Number(valueA) || 0;
-        valueB = Number(valueB) || 0;
-        
-        if (sortConfig.direction === 'asc') {
-          return valueA - valueB;
-        } else {
-          return valueB - valueA;
-        }
-      } else {
-        // สำหรับข้อมูลอื่นๆ ให้เรียงแบบ string
-        valueA = valueA.toString().toLowerCase();
-        valueB = valueB.toString().toLowerCase();
-        
-        if (sortConfig.direction === 'asc') {
-          return valueA.localeCompare(valueB);
-        } else {
-          return valueB.localeCompare(valueB);
-        }
+          // สำหรับ DayRepair และ Vipa ให้แปลงเป็น Number
+          if (sortConfig.column === 'DayRepair' || sortConfig.column === 'Vipa') {
+            valueA = Number(valueA) || 0;
+            valueB = Number(valueB) || 0;
+            
+            if (sortConfig.direction === 'asc') {
+              return valueA - valueB;
+            } else {
+              return valueB - valueA;
+            }
+          } else {
+            // สำหรับข้อมูลอื่นๆ ให้เรียงแบบ string
+            valueA = valueA.toString().toLowerCase();
+            valueB = valueB.toString().toLowerCase();
+            
+            if (sortConfig.direction === 'asc') {
+              return valueA.localeCompare(valueB);
+            } else {
+              return valueB.localeCompare(valueB);
+            }
+          }
+        });
       }
-    });
-  }
 
-  currentPage = 1;
-  renderTable(filteredData);
-  updateCallCount(filteredData);
-}
+      currentPage = 1;
+      renderTable(filteredData);
+      updateCallCount(filteredData);
+    }
 
     teamFilter.addEventListener("change", filterAndRenderTable);
 
