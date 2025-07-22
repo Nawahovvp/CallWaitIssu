@@ -408,10 +408,13 @@
     });
 
     function populateTeamFilter(data) {
-      // กรองข้อมูลตามเงื่อนไข: Vipa > 0
+      // กรองข้อมูลตามเงื่อนไข: Vipa > 0 และไม่ใช่ "Stock วิภาวดี 62" หรือ "NEC_ยกเลิกผลิต"
       const filteredData = data.filter(row => {
         const vipa = Number(row["Vipa"] || 0); // แปลง Vipa เป็นตัวเลข, ถ้าไม่มีให้เป็น 0
-        return vipa > 0;
+        const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase(); // ดึงค้างหน่วยงาน, ถ้าไม่มีให้เป็น ""
+        return vipa > 0 && 
+               !pendingDept.includes("stock วิภาวดี 62") && 
+               !pendingDept.includes("nec_ยกเลิกผลิต");
       });
 
       // สร้างรายการทีมที่ไม่ซ้ำกันจากข้อมูลที่กรองแล้ว
@@ -474,21 +477,24 @@
     function filterAndRenderTable() {
       const selectedTeam = teamFilter.value;
       const keyword = searchInput.value.toLowerCase().trim();
-      let filteredData = allData.filter(row => 
-        Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
-        (!selectedTeam || row["Team"] === selectedTeam) && // กรองตาม Team
-        (!keyword || // กรองตามคำค้น
-          (row["DateTime"] || "").toLowerCase().includes(keyword) ||
-          (row["Ticket Number"] || "").toLowerCase().includes(keyword) ||
-          (row["Team"] || "").toLowerCase().includes(keyword) ||
-          (row["Brand"] || "").toLowerCase().includes(keyword) ||
-          (row["ค้างหน่วยงาน"] || "").toLowerCase().includes(keyword) ||
-          (row["Material"] || "").toLowerCase().includes(keyword) ||
-          (row["Description"] || "").toLowerCase().includes(keyword) ||
-          (row["Vipa"] || "").toLowerCase().includes(keyword) ||
-          (row["DayRepair"] || "").toLowerCase().includes(keyword)
-        )
-      );
+      let filteredData = allData.filter(row => {
+        const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase();
+        return Number(row["Vipa"] || 0) > 0 && // กรอง Vipa > 0
+               !pendingDept.includes("stock วิภาวดี 62") && // ไม่แสดง Stock วิภาวดี 62
+               !pendingDept.includes("nec_ยกเลิกผลิต") && // ไม่แสดง NEC_ยกเลิกผลิต
+               (!selectedTeam || row["Team"] === selectedTeam) && // กรองตาม Team
+               (!keyword || // กรองตามคำค้น
+                 (row["DateTime"] || "").toLowerCase().includes(keyword) ||
+                 (row["Ticket Number"] || "").toLowerCase().includes(keyword) ||
+                 (row["Team"] || "").toLowerCase().includes(keyword) ||
+                 (row["Brand"] || "").toLowerCase().includes(keyword) ||
+                 (row["ค้างหน่วยงาน"] || "").toLowerCase().includes(keyword) ||
+                 (row["Material"] || "").toLowerCase().includes(keyword) ||
+                 (row["Description"] || "").toLowerCase().includes(keyword) ||
+                 (row["Vipa"] || "").toLowerCase().includes(keyword) ||
+                 (row["DayRepair"] || "").toLowerCase().includes(keyword)
+               );
+      });
 
       if (sortConfig.column) {
         filteredData.sort((a, b) => {
@@ -668,7 +674,12 @@
     };
 
     nextPageButton.onclick = () => {
-      const totalPages = Math.ceil(allData.filter(row => Number(row["Vipa"] || 0) > 0).length / itemsPerPage);
+      const totalPages = Math.ceil(allData.filter(row => {
+        const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase();
+        return Number(row["Vipa"] || 0) > 0 && 
+               !pendingDept.includes("stock วิภาวดี 62") && 
+               !pendingDept.includes("nec_ยกเลิกผลิต");
+      }).length / itemsPerPage);
       if (currentPage < totalPages) {
         currentPage++;
         filterAndRenderTable();
@@ -676,7 +687,12 @@
     };
 
     lastPageButton.onclick = () => {
-      currentPage = Math.ceil(allData.filter(row => Number(row["Vipa"] || 0) > 0).length / itemsPerPage);
+      currentPage = Math.ceil(allData.filter(row => {
+        const pendingDept = (row["ค้างหน่วยงาน"] || "").toLowerCase();
+        return Number(row["Vipa"] || 0) > 0 && 
+               !pendingDept.includes("stock วิภาวดี 62") && 
+               !pendingDept.includes("nec_ยกเลิกผลิต");
+      }).length / itemsPerPage);
       filterAndRenderTable();
     };
 
